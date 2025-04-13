@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Grade Calculator NL</title>
   <style>
     body {
@@ -64,51 +64,37 @@
     th {
       background-color: #f0f0f0;
     }
+    .pass {
+      background-color: #d4edda; /* light green */
+    }
+    .fail {
+      background-color: #f8d7da; /* light red */
+    }
+    #extraInput {
+      margin-top: 2rem;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Grade Calculator (NL)</h1>
+    
     <label for="maxPoints">Max Points:</label>
-    <input type="number" id="maxPoints" placeholder="e.g., 50" />
+    <input type="number" id="maxPoints" placeholder="e.g., 50" step="0.5"/>
 
-    <label for="achievedPoints">Achieved Points:</label>
-    <input type="number" id="achievedPoints" placeholder="e.g., 30" />
+    <button onclick="generateTable()">Generate Table</button>
 
-    <button onclick="calculateGrade()">Calculate Grade</button>
-
-    <div class="result" id="result"></div>
     <div id="gradeTable"></div>
+
+    <div id="extraInput">
+      <label for="achievedPoints">Check Specific Achieved Points:</label>
+      <input type="number" id="achievedPoints" placeholder="e.g., 30.5" step="0.5" oninput="showSpecificGrade()"/>
+      <div class="result" id="specificResult"></div>
+    </div>
   </div>
 
   <script>
-    function calculateGrade() {
-      const maxPoints = parseFloat(document.getElementById('maxPoints').value);
-      const achievedPoints = parseFloat(document.getElementById('achievedPoints').value);
-      const resultDiv = document.getElementById('result');
-      const tableDiv = document.getElementById('gradeTable');
-
-      if (isNaN(maxPoints) || isNaN(achievedPoints) || maxPoints <= 0) {
-        resultDiv.textContent = 'Please enter valid numbers.';
-        tableDiv.innerHTML = '';
-        return;
-      }
-
-      const percentage = achievedPoints / maxPoints;
-      const grade = computeGrade(percentage);
-      resultDiv.textContent = `Final grade: ${grade.toFixed(1)}`;
-
-      // Generate table
-      let tableHTML = '<table><tr><th>Achieved Points</th><th>Grade</th></tr>';
-      for (let points = 0; points <= maxPoints; points++) {
-        const pct = points / maxPoints;
-        const pointGrade = computeGrade(pct);
-        tableHTML += `<tr><td>${points}</td><td>${pointGrade.toFixed(1)}</td></tr>`;
-      }
-      tableHTML += '</table>';
-      tableDiv.innerHTML = tableHTML;
-    }
-
     function computeGrade(percentage) {
       const passingPoint = 0.6; // 60% for 5.5
       let grade;
@@ -116,13 +102,56 @@
       if (percentage <= 0) {
         grade = 1;
       } else if (percentage < passingPoint) {
-        grade = 1 + (percentage / passingPoint) * (5.5 - 1);
+        grade = (percentage / passingPoint) * (5.5 - 1) + 1;
       } else {
-        const curvedPercentage = Math.pow((percentage - passingPoint) / (1 - passingPoint), 0.7);
-        grade = 5.5 + curvedPercentage * (10 - 5.5);
+        grade = ((percentage - passingPoint) / (1 - passingPoint)) * (10 - 5.5) + 5.5;
       }
 
       return Math.max(1, Math.min(10, grade));
+    }
+
+    function generateTable() {
+      const maxPoints = parseFloat(document.getElementById('maxPoints').value);
+      const tableDiv = document.getElementById('gradeTable');
+      const extraInputDiv = document.getElementById('extraInput');
+      const specificResult = document.getElementById('specificResult');
+
+      if (isNaN(maxPoints) || maxPoints <= 0) {
+        tableDiv.innerHTML = 'Please enter a valid number for max points.';
+        extraInputDiv.style.display = 'none';
+        return;
+      }
+
+      // Reset specific result
+      specificResult.textContent = '';
+
+      let tableHTML = '<table><tr><th>Achieved Points</th><th>Grade</th></tr>';
+      for (let points = maxPoints; points >= 0; points -= 0.5) {
+        const pct = points / maxPoints;
+        const pointGrade = computeGrade(pct);
+        const gradeClass = pointGrade >= 5.5 ? 'pass' : 'fail';
+        tableHTML += `<tr class="${gradeClass}"><td>${points}</td><td>${pointGrade.toFixed(1)}</td></tr>`;
+      }
+      tableHTML += '</table>';
+      tableDiv.innerHTML = tableHTML;
+
+      // Show extra input
+      extraInputDiv.style.display = 'block';
+    }
+
+    function showSpecificGrade() {
+      const maxPoints = parseFloat(document.getElementById('maxPoints').value);
+      const achievedPoints = parseFloat(document.getElementById('achievedPoints').value);
+      const resultDiv = document.getElementById('specificResult');
+
+      if (isNaN(maxPoints) || isNaN(achievedPoints) || achievedPoints < 0 || achievedPoints > maxPoints) {
+        resultDiv.textContent = 'Please enter a valid number of achieved points.';
+        return;
+      }
+
+      const percentage = achievedPoints / maxPoints;
+      const grade = computeGrade(percentage);
+      resultDiv.textContent = `Grade for ${achievedPoints} points: ${grade.toFixed(1)}`;
     }
   </script>
 </body>
